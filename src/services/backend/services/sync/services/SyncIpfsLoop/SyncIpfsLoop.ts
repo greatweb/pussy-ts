@@ -1,17 +1,18 @@
 import { Observable, defer, from, map, combineLatest } from 'rxjs';
 import BroadcastChannelSender from 'src/services/backend/channels/BroadcastChannelSender';
 import { broadcastStatus } from 'src/services/backend/channels/broadcastStatus';
-import { CybIpfsNode } from 'src/services/ipfs/ipfs';
+import { CybIpfsNode } from 'src/services/ipfs/types';
 import { mapPinToEntity } from 'src/services/CozoDb/mapping';
 import { QueuePriority } from 'src/services/QueueManager/types';
 
-import DbApi from '../../../dataSource/indexedDb/dbApiWrapper';
+import DbApi from '../../../DbApi/DbApi';
 
 import { ServiceDeps } from '../types';
 import { createLoopObservable } from '../utils/rxjs/loop';
 import { IPFS_SYNC_INTERVAL } from '../consts';
-import { fetchPins } from '../../../dataSource/ipfs/ipfsSource';
+import { fetchPins } from './services';
 import ParticlesResolverQueue from '../ParticlesResolverQueue/ParticlesResolverQueue';
+import { SyncQueueJobType } from 'src/services/CozoDb/types/entities';
 
 class SyncIpfsLoop {
   private isInitialized$: Observable<boolean>;
@@ -112,6 +113,7 @@ class SyncIpfsLoop {
         await this.particlesResolver!.enqueue(
           particlesToAdd.map((cid) => ({
             id: cid,
+            jobType: SyncQueueJobType.particle,
             priority: QueuePriority.LOW,
           }))
         );

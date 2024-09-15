@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActionBar as ActionBarContainer, Tab } from '@cybercongress/gravity';
+import { Tab } from '@cybercongress/gravity';
 import { coin } from '@cosmjs/launchpad';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSigningClient } from 'src/contexts/signerClient';
+import { PATTERN_CYBER, PATTERN_CYBER_CONTRACT } from 'src/constants/patterns';
+import { DEFAULT_GAS_LIMITS } from 'src/constants/config';
 import {
   Dots,
   ActionBarContentText,
@@ -15,12 +17,7 @@ import {
   ActionBar as ActionBarCenter,
   Input,
 } from '../../../components';
-import {
-  LEDGER,
-  PATTERN_CYBER_CONTRACT,
-  DEFAULT_GAS_LIMITS,
-} from '../../../utils/config';
-import { PATTERN_CYBER } from 'src/constants/app';
+import { LEDGER } from '../../../utils/config';
 import { getTxs } from '../../../utils/search/utils';
 import { ValueImg } from '../ui';
 import { routes } from '../../../routes';
@@ -59,37 +56,7 @@ function Btn({ onSelect, checkedSwitch, text, ...props }) {
   );
 }
 
-function ActionBarSteps({
-  children,
-  btnText,
-  onClickFnc,
-  onClickBack,
-  disabled,
-}) {
-  return (
-    <ActionBarContainer>
-      {onClickBack && (
-        <ButtonIcon
-          style={{ padding: 0 }}
-          img={back}
-          onClick={onClickBack}
-          text="previous step"
-        />
-      )}
-      <ActionBarContentText marginLeft={onClickBack ? 30 : 0}>
-        {children}
-      </ActionBarContentText>
-      {btnText && (
-        <Button disabled={disabled} onClick={onClickFnc}>
-          {btnText}
-        </Button>
-      )}
-    </ActionBarContainer>
-  );
-}
-
 function ActionBar({ selected, updateFnc, addressActive, selectedRoute }) {
-  const navigate = useNavigate();
   const { signer, signingClient } = useSigningClient();
   const [stage, setStage] = useState(STAGE_INIT);
   const [txHash, setTxHash] = useState(null);
@@ -219,7 +186,7 @@ function ActionBar({ selected, updateFnc, addressActive, selectedRoute }) {
 
   if (addressActive === null) {
     return (
-      <ActionBarContainer>
+      <ActionBarCenter>
         <ActionBarContentText>
           Start by adding a address to
           <Link style={{ marginLeft: 5 }} to="/">
@@ -227,19 +194,19 @@ function ActionBar({ selected, updateFnc, addressActive, selectedRoute }) {
           </Link>
           .
         </ActionBarContentText>
-      </ActionBarContainer>
+      </ActionBarCenter>
     );
   }
 
   if (!signingClient && !signer) {
     return (
-      <ActionBarContainer>
+      <ActionBarCenter>
         <Dots big />
-      </ActionBarContainer>
+      </ActionBarCenter>
     );
   }
 
-  if (stage === STAGE_INIT && selected === 'myEnegy') {
+  if (stage === STAGE_INIT && !selected) {
     return (
       <ActionBarCenter
         button={{
@@ -294,11 +261,13 @@ function ActionBar({ selected, updateFnc, addressActive, selectedRoute }) {
 
   if (stage === STAGE_ADD_ROUTER) {
     return (
-      <ActionBarSteps
-        disabled={aliasInput.length === 0}
-        onClickFnc={generationTxs}
+      <ActionBarCenter
+        button={{
+          text: 'Add Router',
+          disabled: aliasInput.length === 0,
+          onClick: generationTxs,
+        }}
         onClickBack={() => setStage(STAGE_INIT)}
-        btnText="Add Router"
       >
         <Input
           value={addressAddRouteInput}
@@ -318,7 +287,7 @@ function ActionBar({ selected, updateFnc, addressActive, selectedRoute }) {
           onChange={(e) => setAliasInput(e.target.value)}
           placeholder="alias"
         />
-      </ActionBarSteps>
+      </ActionBarCenter>
     );
   }
 
@@ -356,26 +325,25 @@ function ActionBar({ selected, updateFnc, addressActive, selectedRoute }) {
 
   if (stage === STAGE_DELETE_ROUTER) {
     return (
-      <ActionBarSteps
-        onClickFnc={generationTxs}
+      <ActionBarCenter
         onClickBack={() => setStage(STAGE_INIT)}
-        btnText="Delete Router"
+        button={{ text: 'Delete Route', onClick: generationTxs }}
       >
         Delete energy route for{' '}
         {Object.keys(selectedRoute).length > 0 && (
           <Account address={selectedRoute.destination} margin="0 5px" />
         )}
-      </ActionBarSteps>
+      </ActionBarCenter>
     );
   }
 
   if (stage === STAGE_SUBMITTED) {
     return (
-      <ActionBarContainer>
+      <ActionBarCenter>
         <ActionBarContentText>
           check the transaction <Dots big />
         </ActionBarContentText>
-      </ActionBarContainer>
+      </ActionBarCenter>
     );
   }
 

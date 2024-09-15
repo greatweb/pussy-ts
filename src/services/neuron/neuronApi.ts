@@ -1,13 +1,20 @@
 /* eslint-disable import/no-unused-modules */
-import { Coin, StdFee } from '@cosmjs/launchpad';
+import { Coin, OfflineSigner, StdFee } from '@cosmjs/launchpad';
 import { SigningCyberClient } from '@cybercongress/cyber-js';
 import { SenseApi } from 'src/contexts/backend/services/senseApi';
 import { NeuronAddress, ParticleCid } from 'src/types/base';
-import { DEFAULT_GAS_LIMITS } from 'src/utils/config';
 import { getNowUtcNumber } from 'src/utils/date';
 
+import { DEFAULT_GAS_LIMITS } from 'src/constants/config';
 import { LinkDto } from '../CozoDb/types/dto';
 import { throwErrorOrResponse } from './errors';
+
+import { CONTRACT_ADDRESS_PASSPORT } from 'src/containers/portal/utils';
+
+const defaultFee = {
+  amount: [],
+  gas: DEFAULT_GAS_LIMITS.toString(),
+} as StdFee;
 
 export const sendCyberlink = async (
   neuron: NeuronAddress,
@@ -20,10 +27,7 @@ export const sendCyberlink = async (
     senseApi: SenseApi;
     signingClient: SigningCyberClient;
   },
-  fee: StdFee = {
-    amount: [],
-    gas: DEFAULT_GAS_LIMITS.toString(),
-  } as StdFee
+  fee: StdFee = defaultFee
 ) => {
   const response = await signingClient!.cyberlink(neuron, from, to, fee);
   const result = throwErrorOrResponse(response);
@@ -37,7 +41,8 @@ export const sendCyberlink = async (
     neuron,
   } as LinkDto;
 
-  await senseApi?.putCyberlinsks(link);
+  // TODO: add from/toparticle to DB ??
+  await senseApi?.putCyberlink(link);
   await senseApi?.addCyberlinkLocal(link);
 
   return transactionHash;
@@ -72,4 +77,50 @@ export const sendTokensWithMessage = async (
   });
 
   return transactionHash;
+};
+
+export const investmint = async (
+  address: NeuronAddress,
+  amount: Coin,
+  resource: string,
+  length: number,
+  signingClient: SigningCyberClient
+) => {
+  const response = await signingClient.investmint(
+    address,
+    amount,
+    resource,
+    length,
+    'auto'
+  );
+
+  const { transactionHash } = throwErrorOrResponse(response);
+  return transactionHash;
+};
+
+export const updatePassportParticle = async (
+  nickname: string,
+  particle: ParticleCid,
+  {
+    signer,
+    signingClient,
+  }: {
+    signer: OfflineSigner;
+    signingClient: SigningCyberClient;
+  }
+) => {
+  const [{ address }] = await signer.getAccounts();
+
+  const msgObject = {
+    update_particle: {
+      nickname,
+      particle,
+    },
+  };
+  return signingClient.execute(
+    address,
+    CONTRACT_ADDRESS_PASSPORT,
+    msgObject,
+    'auto'
+  );
 };

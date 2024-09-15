@@ -4,13 +4,14 @@ import { bufferTime, filter } from 'rxjs/operators';
 
 import {
   BC_MSG_LOAD_COMMUNITY,
+  BC_MSG_SET_DEFAULT_ACCOUNT,
   BroadcastChannelMessage,
   getBroadcastChannemMessageKey,
 } from '../types/services';
 import { CYB_BROADCAST_CHANNEL } from './consts';
 
 const shouldTrottle = (msg: MessageEvent<BroadcastChannelMessage>) =>
-  ['sync_entry', 'service_status', 'sync_status', 'indexeddb_write'].some(
+  ['sync_entry', 'sync_status', 'indexeddb_write', 'sync_ml_entry'].some(
     (name) => name === msg.data.type
   );
 
@@ -24,7 +25,10 @@ class RxBroadcastChannelListener {
       const channel = new BroadcastChannel(CYB_BROADCAST_CHANNEL);
 
       channel.onmessage = (msg: MessageEvent<BroadcastChannelMessage>) => {
-        if (msg.data.type === BC_MSG_LOAD_COMMUNITY) {
+        if (
+          msg.data.type === BC_MSG_LOAD_COMMUNITY ||
+          msg.data.type === BC_MSG_SET_DEFAULT_ACCOUNT
+        ) {
           dispatch(msg.data);
           return;
         }
@@ -46,8 +50,9 @@ class RxBroadcastChannelListener {
       bufferTime(0)
     );
 
-    this.subscription = merge(bufferedMessages, normalMessages).subscribe(
-      (messages) => {
+    this.subscription = merge(bufferedMessages, normalMessages)
+      .pipe(filter((m) => m.length > 0))
+      .subscribe((messages) => {
         if (messages.length > 0) {
           const items = new Map<string, BroadcastChannelMessage>();
           messages.forEach((msg) => {
@@ -56,8 +61,7 @@ class RxBroadcastChannelListener {
           });
           items.forEach(dispatch);
         }
-      }
-    );
+      });
   }
 
   close() {

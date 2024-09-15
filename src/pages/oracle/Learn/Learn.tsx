@@ -8,7 +8,6 @@ import {
 } from 'src/components';
 import { routes } from 'src/routes';
 import { useEffect, useState } from 'react';
-import { CYBER } from 'src/utils/config';
 import { useAdviser } from 'src/features/adviser/context';
 import { useQueryClient } from 'src/contexts/queryClient';
 import { selectCurrentAddress } from 'src/redux/features/pocket';
@@ -22,6 +21,7 @@ import { AdviserColors } from 'src/features/adviser/Adviser/Adviser';
 import { useBackend } from 'src/contexts/backend/backend';
 import { sendCyberlink } from 'src/services/neuron/neuronApi';
 import { addIfpsMessageOrCid } from 'src/utils/ipfs/helpers';
+import { CHAIN_ID } from 'src/constants/config';
 import TitleText from '../landing/components/TitleText/TitleText';
 import KeywordButton from '../landing/components/KeywordButton/KeywordButton';
 import styles from './Learn.module.scss';
@@ -61,11 +61,11 @@ function Learn() {
   const { signer, signingClient } = useSigningClient();
   const navigate = useNavigate();
 
-  const { balacesResource } = useGetSlots(address);
+  const { balancesResource } = useGetSlots(address);
 
-  const passport = useAppSelector(selectCurrentPassport);
+  const citizenship = useAppSelector(selectCurrentPassport);
 
-  const noPassport = CYBER.CHAIN_ID === Networks.BOSTROM && !passport;
+  const noPassport = CHAIN_ID === Networks.BOSTROM && !citizenship;
 
   const [tx, setTx] = useState({
     hash: '',
@@ -79,7 +79,7 @@ function Learn() {
 
   const { setAdviser } = useAdviser();
 
-  const noEnergy = !balacesResource.millivolt || !balacesResource.milliampere;
+  const noEnergy = !balancesResource.millivolt || !balancesResource.milliampere;
 
   useEffect(() => {
     let content;
@@ -167,7 +167,7 @@ function Learn() {
   }
 
   return (
-    <MainContainer width="100%">
+    <MainContainer>
       <div className={styles.wrapper}>
         <div className={styles.info}>
           <h3 className={styles.titleText}>
@@ -249,8 +249,8 @@ function Learn() {
           <BandwidthBar tooltipPlacement="top" />
 
           <div>
-            <span>{balacesResource.millivolt} ⚡️</span>
-            <span>{balacesResource.milliampere} 💡</span>
+            <span>{balancesResource.millivolt} ⚡️</span>
+            <span>{balancesResource.milliampere} 💡</span>
           </div>
         </div>
 

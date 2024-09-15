@@ -2,8 +2,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import usePassportByAddress from 'src/features/passport/hooks/usePassportByAddress';
 import usePassportContract from 'src/features/passport/usePassportContract';
 import { Citizenship } from 'src/types/citizenship';
-import { PATTERN_CYBER } from 'src/constants/app';
+import { PATTERN_CYBER } from 'src/constants/patterns';
 import Sense from './Sense';
+import { useRobotContext } from 'src/pages/robot/robot.context';
 
 /**
     Complex logic, although code seems simple
@@ -42,6 +43,7 @@ function SenseRoutingWrapper() {
   const { senseId: paramSenseId } = useParams<{
     senseId: string;
   }>();
+  const { isOwner, address: robotAddress } = useRobotContext();
 
   const address = paramSenseId?.match(PATTERN_CYBER) ? paramSenseId : undefined;
 
@@ -78,8 +80,12 @@ function SenseRoutingWrapper() {
     });
   }
 
-  const senseId =
+  let senseId =
     address || (nickname && findAddressByNickname(nickname)) || paramSenseId;
+
+  if (!isOwner) {
+    senseId = robotAddress || undefined;
+  }
 
   return <Sense urlSenseId={senseId} />;
 }

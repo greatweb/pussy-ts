@@ -1,24 +1,22 @@
 /* eslint-disable no-await-in-loop */
 import bech32 from 'bech32';
-import { fromUtf8 } from '@cosmjs/encoding';
+import { fromBase64, fromUtf8, toBech32 } from '@cosmjs/encoding';
 import { Sha256 } from '@cosmjs/crypto';
 import BigNumber from 'bignumber.js';
 import { ObjKeyValue } from 'src/types/data';
 import { Pool } from '@cybercongress/cyber-js/build/codec/tendermint/liquidity/v1beta1/liquidity';
 import { Option } from 'src/types';
-import { CYBER, LEDGER } from './config';
-import tokenList from './tokenList';
+import { Key } from '@keplr-wallet/types';
+import { AccountValue } from 'src/types/defaultAccount';
+import { BECH32_PREFIX, BECH32_PREFIX_VAL_CONS } from 'src/constants/config';
+import { LEDGER } from './config';
 
 import cyberSpace from '../image/large-purple-circle.png';
 import customNetwork from '../image/large-orange-circle.png';
 import cyberBostrom from '../image/large-green.png';
-import { Key } from '@keplr-wallet/types';
-import { AccountValue } from 'src/types/defaultAccount';
 
 const DEFAULT_DECIMAL_DIGITS = 3;
 const DEFAULT_CURRENCY = 'GoL';
-
-const { BECH32_PREFIX_ACC_ADDR_CYBER } = CYBER;
 
 const roundNumber = (num, scale) => {
   if (!`${num}`.includes('e')) {
@@ -106,15 +104,18 @@ const asyncForEach = async (array, callback) => {
   }
 };
 
-const fromBech32 = (operatorAddr, prefix = BECH32_PREFIX_ACC_ADDR_CYBER) => {
+const fromBech32 = (operatorAddr, prefix = BECH32_PREFIX) => {
   const address = bech32.decode(operatorAddr);
   return bech32.encode(prefix, address.words);
 };
 
-const trimString = (address, firstArg, secondArg) => {
-  const first = firstArg || 3;
-  const second = secondArg || 8;
+export const consensusPubkey = (pubKey: string) => {
+  const ed25519PubkeyRaw = fromBase64(pubKey);
+  const addressData = sha256(ed25519PubkeyRaw).slice(0, 20);
+  return toBech32(BECH32_PREFIX_VAL_CONS, addressData);
+};
 
+const trimString = (address: string, first = 3, second = 8) => {
   if (address && address.length > 11) {
     return `${address.substring(0, first)}...${address.substring(
       address.length - second
@@ -245,9 +246,9 @@ function timeSince(timeMS: number) {
   }
   interval = Math.floor(seconds / 60);
   if (interval > 1) {
-    return `${interval} minutes`;
+    return `${interval} min`;
   }
-  return `${Math.floor(seconds)} seconds`;
+  return `${Math.floor(seconds)} sec`;
 }
 
 const reduceBalances = (data): ObjKeyValue => {
@@ -371,18 +372,6 @@ function isNative(denom) {
   return true;
 }
 
-const findDenomInTokenList = (baseDenom) => {
-  let demonInfo = null;
-
-  const findObj = tokenList.find((item) => item.coinMinimalDenom === baseDenom);
-
-  if (findObj) {
-    demonInfo = { ...findObj };
-  }
-
-  return demonInfo;
-};
-
 const findPoolDenomInArr = (
   baseDenom: string,
   dataPools: Pool[]
@@ -391,6 +380,7 @@ const findPoolDenomInArr = (
   return findObj;
 };
 
+// REFACTOR: Probably wrong timestamp
 const getNowUtcTime = (): number => {
   const now = new Date();
   const utcTime = new Date(
@@ -443,7 +433,6 @@ export {
   getDisplayAmountReverce,
   convertAmount,
   convertAmountReverce,
-  findDenomInTokenList,
   isNative,
   findPoolDenomInArr,
   getNowUtcTime,

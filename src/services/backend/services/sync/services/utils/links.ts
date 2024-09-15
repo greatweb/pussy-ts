@@ -4,13 +4,14 @@ import { asyncIterableBatchProcessor } from 'src/utils/async/iterable';
 import { CID_TWEET } from 'src/constants/app';
 import { LinkDto, TransactionDto } from 'src/services/CozoDb/types/dto';
 
-import { fetchCyberlinksIterable } from '../../../dataSource/blockchain/indexer';
+import { fetchCyberlinksIterable } from '../../../indexer/cyberlinks';
 import ParticlesResolverQueue from '../ParticlesResolverQueue/ParticlesResolverQueue';
 import { MAX_LINKS_RESOLVE_BATCH } from '../consts';
 import {
   CYBER_LINK_TRANSACTION_TYPE,
   CyberLinkValue,
 } from '../../../indexer/types';
+import { SyncQueueJobType } from 'src/services/CozoDb/types/entities';
 
 const getUniqueParticlesFromLinks = (links: CyberLinkSimple[]) =>
   [
@@ -42,7 +43,11 @@ export const fetchCyberlinksAndResolveParticles = async (
       await asyncIterableBatchProcessor(
         particles,
         (cids: ParticleCid[]) =>
-          particlesResolver!.enqueueBatch(cids, queuePriority),
+          particlesResolver!.enqueueBatch(
+            cids,
+            SyncQueueJobType.particle,
+            queuePriority
+          ),
         MAX_LINKS_RESOLVE_BATCH
       );
     }

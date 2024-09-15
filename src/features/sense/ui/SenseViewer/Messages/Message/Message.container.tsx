@@ -1,15 +1,16 @@
 import { selectCurrentAddress } from 'src/redux/features/pocket';
 import { useAppSelector } from 'src/redux/hooks';
 
-import Message from './Message';
-import useParticleDetails from '../../../../../particle/useParticleDetails';
 import ContentIpfs from 'src/components/contentIpfs/contentIpfs';
-import { Dots } from 'src/components';
+import { Account, Dots } from 'src/components';
 import { SenseItem } from 'src/features/sense/redux/sense.redux';
-import { formatSenseItemDataToUI } from '../../../utils/format';
 import { getIpfsHash } from 'src/utils/ipfs/helpers';
 import { useEffect, useState } from 'react';
-import { PATTERN_IPFS_HASH } from 'src/constants/app';
+import { PATTERN_IPFS_HASH } from 'src/constants/patterns';
+import { formatSenseItemDataToUI } from '../../../utils/format';
+import useParticleDetails from '../../../../../particle/useParticleDetails';
+import Message from './Message';
+import styles from './Message.container.module.scss';
 
 type Props = {
   senseItem: SenseItem;
@@ -29,6 +30,7 @@ function MessageContainer({ senseItem, currentChatId }: Props) {
     text,
     fromLog,
     isAmountSendToMyAddress,
+    isFollow,
   } = formatSenseItemDataToUI(senseItem, address, currentChatId);
 
   const particleDetails = useParticleDetails(cid!, {
@@ -58,14 +60,27 @@ function MessageContainer({ senseItem, currentChatId }: Props) {
         </span>
       );
     } else if (data) {
-      content = (
-        <ContentIpfs
-          details={data}
-          cid={data.cid}
-          content={data.content}
-          search
-        />
-      );
+      if (isFollow) {
+        // some CIDs are not addresses
+        // /sense/@master
+        const address = data.content?.includes('bostrom') && data.content;
+
+        content = (
+          <div className={styles.follow}>
+            <span>💚</span>{' '}
+            {address && <Account address={address} avatar sizeAvatar={20} />}
+          </div>
+        );
+      } else {
+        content = (
+          <ContentIpfs
+            details={data}
+            cid={data.cid}
+            content={data.content}
+            search
+          />
+        );
+      }
     }
   } else if (text) {
     content = text;
@@ -76,7 +91,7 @@ function MessageContainer({ senseItem, currentChatId }: Props) {
       address={from}
       myMessage={address === from}
       fromLog={fromLog}
-      from={from}
+      from={currentChatId !== from ? from : undefined}
       transactionHash={transactionHash}
       date={timestamp}
       content={content}

@@ -6,7 +6,10 @@ import {
   BehaviorSubject,
 } from 'rxjs';
 
-import { EntryType } from 'src/services/CozoDb/types/entities';
+import {
+  EntryType,
+  SyncQueueJobType,
+} from 'src/services/CozoDb/types/entities';
 
 import { NeuronAddress } from 'src/types/base';
 import { QueuePriority } from 'src/services/QueueManager/types';
@@ -20,8 +23,8 @@ import { SenseItemLinkMeta } from 'src/services/backend/types/sense';
 import { entityToDto } from 'src/utils/dto';
 import { ServiceDeps } from '../types';
 
-import { fetchCyberlinksByNerounIterable } from '../../../dataSource/blockchain/indexer';
-import { CYBERLINKS_BATCH_LIMIT } from '../../../dataSource/blockchain/consts';
+import { fetchCyberlinksByNerounIterable } from '../../../indexer/cyberlinks';
+import { CYBERLINKS_BATCH_LIMIT } from '../../../indexer/consts';
 import BaseSyncLoop from '../BaseSyncLoop/BaseSyncLoop';
 import { SyncServiceParams } from '../../types';
 import { getLastReadInfo } from '../../utils';
@@ -170,6 +173,7 @@ class SyncMyFriendsLoop extends BaseSyncLoop {
           const particles = links.map((t) => t.to);
           await this.particlesResolver!.enqueueBatch(
             particles,
+            SyncQueueJobType.particle,
             QueuePriority.HIGH
           );
 

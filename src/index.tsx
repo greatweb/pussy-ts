@@ -20,18 +20,18 @@ import { getMainDefinition } from '@apollo/client/utilities';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Provider } from 'react-redux';
+import { Helmet } from 'react-helmet';
 import AppRouter from './router';
-import { CYBER } from './utils/config';
 import store from './redux/store';
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 
 import './style/main.css';
 import './style/index.scss';
 import './image/favicon.ico';
 
-// for bootloading
+// for boot loading
 import './image/robot.svg';
 
-// import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import SdkQueryClientProvider from './contexts/queryClient';
 import SigningClientProvider from './contexts/signerClient';
 import DataProvider from './contexts/appData';
@@ -41,11 +41,15 @@ import IbcDenomProvider from './contexts/ibcDenom';
 import NetworksProvider from './contexts/networks';
 import BackendProvider from './contexts/backend/backend';
 
-import { Helmet } from 'react-helmet';
 import AdviserProvider from './features/adviser/context';
+import HubProvider from './contexts/hub';
+
+import { INDEX_HTTPS, INDEX_WEBSOCKET } from './constants/config';
+import ScriptingProvider from './contexts/scripting/scripting';
+import { localStorageKeys } from './constants/localStorageKeys';
 
 const httpLink = new HttpLink({
-  uri: CYBER.CYBER_INDEX_HTTPS,
+  uri: INDEX_HTTPS,
   headers: {
     'content-type': 'application/json',
     authorization: '',
@@ -54,7 +58,7 @@ const httpLink = new HttpLink({
 
 const wsLink = new GraphQLWsLink(
   createClient({
-    url: CYBER.CYBER_INDEX_WEBSOCKET,
+    url: INDEX_WEBSOCKET,
   })
 );
 
@@ -96,30 +100,35 @@ if (container === null) {
 
 const root = createRoot(container);
 
-// for Storybook, WIP
-export function Providers({ children }: { children: React.ReactNode }) {
+// temp
+localStorage.removeItem(localStorageKeys.settings.adviserAudio);
+
+function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <NetworksProvider>
         <QueryClientProvider client={queryClient}>
           <SdkQueryClientProvider>
             <SigningClientProvider>
-              <IbcDenomProvider>
-                <WebsocketsProvider>
-                  <DataProvider>
-                    <ApolloProvider client={client}>
-                      <BackendProvider>
-                        <DeviceProvider>
-                          <AdviserProvider>
-                            {/* <ErrorBoundary>{children}</ErrorBoundary> */}
-                            {children}
-                          </AdviserProvider>
-                        </DeviceProvider>
-                      </BackendProvider>
-                    </ApolloProvider>
-                  </DataProvider>
-                </WebsocketsProvider>
-              </IbcDenomProvider>
+              <HubProvider>
+                <IbcDenomProvider>
+                  <WebsocketsProvider>
+                    <DataProvider>
+                      <ApolloProvider client={client}>
+                        <BackendProvider>
+                          <ScriptingProvider>
+                            <DeviceProvider>
+                              <AdviserProvider>
+                                <ErrorBoundary>{children}</ErrorBoundary>
+                              </AdviserProvider>
+                            </DeviceProvider>
+                          </ScriptingProvider>
+                        </BackendProvider>
+                      </ApolloProvider>
+                    </DataProvider>
+                  </WebsocketsProvider>
+                </IbcDenomProvider>
+              </HubProvider>
             </SigningClientProvider>
           </SdkQueryClientProvider>
         </QueryClientProvider>

@@ -3,18 +3,20 @@ import { connect } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { useDevice } from 'src/contexts/device';
 import { useQueryClient } from 'src/contexts/queryClient';
+import { useAdviser } from 'src/features/adviser/context';
+import { getDelegatorDelegations } from 'src/utils/search/utils';
+import { BondStatus } from 'cosmjs-types/cosmos/staking/v1beta1/staking';
+import { DenomArr, MainContainer } from 'src/components';
 import { fromBech32, formatNumber, asyncForEach } from '../../utils/utils';
 import { Loading } from '../../components';
 import ActionBarContainer from './ActionBarContainer';
 import { TableHeroes, TableItem, InfoBalance } from './components';
 import getHeroes from './getHeroesHook';
-import { BOND_STATUS } from '../../utils/config';
 import { useGetBalance } from '../../pages/robot/_refactor/account/hooks';
 import useSetActiveAddress from '../../hooks/useSetActiveAddress';
-import { getDelegatorDelegations } from 'src/utils/search/utils';
-import { useAdviser } from 'src/features/adviser/context';
-import { DenomArr } from 'src/components';
 import styles from './Validators.module.scss';
+import { BASE_DENOM, DENOM_LIQUID } from 'src/constants/config';
+import useStakingParams from 'src/features/staking/useStakingParams';
 
 function Validators({ defaultAccount }) {
   const { isMobile: mobile } = useDevice();
@@ -40,16 +42,26 @@ function Validators({ defaultAccount }) {
 
   const { setAdviser } = useAdviser();
 
+  const { data: stakingParamsData } = useStakingParams();
+  const unbondingDays =
+    stakingParamsData &&
+    stakingParamsData.params.unbondingTime.seconds / 60 / 60 / 24;
+
   useEffect(() => {
     setAdviser(
       <div className={styles.info}>
-        the current undelegation period is <strong>42 days</strong>
-        <br />
-        you need to burn 1 <DenomArr denomValue="hydrogen" onlyImg /> to unstake
-        1 <DenomArr denomValue="boot" onlyImg />
+        {unbondingDays && (
+          <>
+            the current undelegation period is{' '}
+            <strong>{unbondingDays} days</strong>
+            <br />
+          </>
+        )}
+        you need to burn 1 <DenomArr denomValue={DENOM_LIQUID} onlyImg /> to
+        unstake 1 <DenomArr denomValue={BASE_DENOM} onlyImg />
       </div>
     );
-  }, [setAdviser]);
+  }, [setAdviser, unbondingDays]);
 
   useEffect(() => {
     setValidatorsData(validators);
@@ -204,7 +216,7 @@ function Validators({ defaultAccount }) {
 
   return (
     <div>
-      <main className="block-body" style={{ paddingTop: 0 }}>
+      <MainContainer>
         <InfoBalance
           balance={balance}
           loadingBalanceInfo={loadingBalanceInfo}
@@ -214,8 +226,8 @@ function Validators({ defaultAccount }) {
           {validatorsData
             .filter((validator) =>
               status === 'jailed'
-                ? BOND_STATUS[validator.status] < 3
-                : BOND_STATUS[validator.status] === 3
+                ? BondStatus[validator.status] < 3
+                : BondStatus[validator.status] === 3
             )
             .map((validator, index) => {
               const commission = formatNumber(
@@ -243,7 +255,7 @@ function Validators({ defaultAccount }) {
               );
             })}
         </TableHeroes>
-      </main>
+      </MainContainer>
       <ActionBarContainer
         updateFnc={updateFnc}
         validators={validatorSelect}

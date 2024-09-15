@@ -1,4 +1,5 @@
 import { SyncCommunityResult } from 'src/services/community/community';
+import { setDefaultAccount } from 'src/redux/features/pocket';
 import { IndexedDbWriteMessage } from '../../CozoDb/types/types';
 
 export type SyncEntryName =
@@ -33,6 +34,7 @@ export type SyncProgress = Partial<{
 export type ServiceStatus = 'inactive' | 'starting' | 'started' | 'error';
 
 export type SyncEntryStatus = Record<SyncEntryName, SyncProgress>;
+export type SyncMlEntryStatus = Record<string, SyncProgress>;
 
 export type SyncState = {
   entryStatus: Partial<SyncEntryStatus>;
@@ -40,8 +42,12 @@ export type SyncState = {
   totalEstimatedTime: number;
   message: string;
   inProgress: boolean;
-  completeIntialSyncEntries: SyncEntryName[];
+  completeIntialSyncEntries: SyncEntryName[] | string[];
   initialSyncDone: boolean;
+};
+
+export type MlSyncState = {
+  entryStatus: Partial<SyncMlEntryStatus>;
 };
 
 export type SyncStatusMessage = {
@@ -57,7 +63,15 @@ export type SyncEntryMessage = {
   };
 };
 
-export type ServiceName = 'db' | 'ipfs' | 'sync';
+export type SyncMlEntryMessage = {
+  type: 'sync_ml_entry';
+  value: {
+    entry: string;
+    state: SyncProgress;
+  };
+};
+
+export type ServiceName = 'db' | 'ipfs' | 'sync' | 'ml' | 'rune';
 
 export type ServiceStatusMessage = {
   type: 'service_status';
@@ -71,6 +85,10 @@ export type LoadCommunityMessage = {
   value: SyncCommunityResult;
 };
 
+export const BC_MSG_SET_DEFAULT_ACCOUNT = setDefaultAccount.type;
+
+export type SetDefaultAccountMessage = typeof setDefaultAccount;
+
 // export type SenseListUpdate = {
 //   type: 'sense_list_update';
 //   list: SenseListItem[];
@@ -81,7 +99,9 @@ export type BroadcastChannelMessage =
   | SyncEntryMessage
   | IndexedDbWriteMessage
   | ServiceStatusMessage
-  | LoadCommunityMessage;
+  | LoadCommunityMessage
+  | SyncMlEntryMessage
+  | SetDefaultAccountMessage;
 // | SenseListUpdate
 // | SenseListRemove;
 
@@ -91,6 +111,8 @@ export const getBroadcastChannemMessageKey = (msg: BroadcastChannelMessage) => {
     case 'service_status':
       return `${type}_${value.name}`;
     case 'sync_entry':
+      return `${type}_${value.entry}`;
+    case 'sync_ml_entry':
       return `${type}_${value.entry}`;
     case 'sync_status':
     default:

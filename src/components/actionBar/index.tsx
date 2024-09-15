@@ -2,17 +2,17 @@ import React from 'react';
 import { $TsFixMeFunc } from 'src/types/tsfix';
 
 import { routes } from 'src/routes';
-import { CYBER } from 'src/utils/config';
 import { useLocation } from 'react-router-dom';
 import { Networks } from 'src/types/networks';
 import usePassportByAddress from 'src/features/passport/hooks/usePassportByAddress';
 import { selectCurrentAddress } from 'src/redux/features/pocket';
 import { useAppSelector } from 'src/redux/hooks';
+import { useSigningClient } from 'src/contexts/signerClient';
+import { trimString } from 'src/utils/utils';
+import { CHAIN_ID } from 'src/constants/config';
 import ButtonIcon from '../buttons/ButtonIcon';
 import styles from './styles.module.scss';
 import Button from '../btnGrd';
-import { useSigningClient } from 'src/contexts/signerClient';
-import { trimString } from 'src/utils/utils';
 
 const back = require('../../image/arrow-left-img.svg');
 
@@ -41,6 +41,7 @@ type Props = {
     onClick?: () => void;
     link?: string;
     disabled?: boolean;
+    pending?: boolean;
   };
 };
 
@@ -59,10 +60,10 @@ function ActionBar({ children, text, onClickBack, button }: Props) {
   const { passport } = usePassportByAddress(address);
 
   const noAccount = !defaultAccount.account;
-  const noPassport = CYBER.CHAIN_ID === Networks.BOSTROM && !passport;
+  const noPassport = CHAIN_ID === Networks.BOSTROM && !passport;
 
   const exception =
-    (location.pathname !== routes.keys.path &&
+    (!location.pathname.includes('/keys') &&
       !location.pathname.includes('/drive') &&
       // !location.pathname.includes('/oracle') &&
       location.pathname !== '/') ||
@@ -120,7 +121,7 @@ function ActionBar({ children, text, onClickBack, button }: Props) {
 
   const content = text || children;
 
-  return (
+  const contentPortal = (
     <ActionBarContainer>
       {/* <Telegram /> */}
 
@@ -139,6 +140,7 @@ function ActionBar({ children, text, onClickBack, button }: Props) {
       {button?.text && (
         <Button
           disabled={button.disabled}
+          pending={button.pending}
           link={button.link}
           onClick={button.onClick}
         >
@@ -148,6 +150,12 @@ function ActionBar({ children, text, onClickBack, button }: Props) {
       {/* <GitHub /> */}
     </ActionBarContainer>
   );
+
+  // const portalEl = document.getElementById('portalActionBar');
+
+  // return portalEl ? createPortal(contentPortal, portalEl) : contentPortal;
+
+  return contentPortal;
 }
 
 export default ActionBar;
